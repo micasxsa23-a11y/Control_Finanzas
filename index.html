@@ -3,49 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Financiero ms.pixelworks</title>
+  <title>Finanzas • Base Cero</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app-container">
-    <header>
-      <h1>Control Financiero</h1>
-      <p>Panel Minimalista</p>
+  <div class="mobile-shell">
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div>
+        <span class="greeting">PRESUPUESTO BASE CERO</span>
+        <h1 id="periodoTitle">Noviembre 2026</h1>
+      </div>
+      <div class="status-pill" id="estadoBaseCero">✔ Base Cero</div>
     </header>
 
-    <!-- Carga con Factura -->
-    <section class="card">
-      <h2>⚡ Carga Rápida / Factura</h2>
-      <label class="file-upload">
-        <span>📄 Subir Factura (PDF/Foto)</span>
-        <input type="file" id="archivoFactura" onchange="analizarFactura(this)">
-      </label>
-      
-      <form id="gastoForm" onsubmit="guardarMovimiento(event)">
-        <div class="input-group">
-          <label>Monto ($)</label>
-          <input type="number" id="monto" step="any" required placeholder="0.00">
+    <!-- Vista 1: Dashboard Principal -->
+    <main id="view-dashboard" class="view active">
+      <!-- Hero Balance Card -->
+      <section class="hero-card">
+        <span class="hero-label">Saldo Real Disponible</span>
+        <div class="hero-amount" id="kpiDisponible">$0,00</div>
+        
+        <div class="progress-wrapper">
+          <div class="progress-labels">
+            <span>Ejecutado del mes</span>
+            <strong id="kpiPorcentaje">0%</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="kpiBarra" style="width: 0%;"></div>
+          </div>
         </div>
-        <div class="input-group">
-          <label>Categoría / Concepto</label>
-          <input type="text" id="categoria" required placeholder="Ej: EDES, Alquiler">
-        </div>
-        <div class="input-group">
-          <label>Notas / Vencimiento</label>
-          <input type="text" id="descripcion" placeholder="Detalle adicional">
-        </div>
-        <button type="submit" class="btn-primary">Guardar Gasto</button>
-      </form>
-      <div id="mensaje"></div>
-    </section>
 
-    <!-- Visualización por Pestañas y Tarjetas -->
-    <section class="card">
-      <h2>📊 Resumen de la Planilla</h2>
-      <div id="tabsContainer" class="tabs"></div>
-      <div id="cardsContainer" class="cards-list">Cargando datos...</div>
-    </section>
+        <div class="hero-stats">
+          <div class="stat-box">
+            <span class="stat-label">Ingreso Neto</span>
+            <span class="stat-val up" id="kpiIngreso">$0</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-box">
+            <span class="stat-label">Gasto Real</span>
+            <span class="stat-val down" id="kpiGasto">$0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Selector de Solapas -->
+      <div class="section-header">
+        <h2>Categorías y Movimientos</h2>
+        <div id="tabsContainer" class="pills-nav"></div>
+      </div>
+
+      <!-- Lista de Tarjetas Limpias -->
+      <div id="cardsContainer" class="cards-feed">
+        <div class="skeleton">Sincronizando con Google Sheets...</div>
+      </div>
+    </main>
+
+    <!-- Vista 2: Subir Factura / Nuevo Gasto -->
+    <main id="view-upload" class="view">
+      <section class="form-card">
+        <h2>⚡ Cargar Boleta o Gasto</h2>
+        <p class="form-sub">Subí el PDF de la factura para autocompletar o ingresá el movimiento a mano.</p>
+
+        <label class="dropzone" id="dropzoneLabel">
+          <span class="drop-icon">📄</span>
+          <span id="fileNameText">Tocar para subir factura (PDF / Imagen)</span>
+          <input type="file" id="archivoFactura" onchange="analizarFactura(this)">
+        </label>
+
+        <form id="gastoForm" onsubmit="guardarMovimiento(event)">
+          <div class="field">
+            <label>Monto ($ ARS)</label>
+            <input type="number" id="monto" step="any" required placeholder="0.00">
+          </div>
+
+          <div class="field">
+            <label>Categoría / Concepto</label>
+            <input type="text" id="categoria" required placeholder="Ej: EDES, Alquiler Calle Colón">
+          </div>
+
+          <div class="field">
+            <label>Vencimiento / Detalles</label>
+            <input type="text" id="descripcion" placeholder="Ej: Vto: 15/11/2026">
+          </div>
+
+          <button type="submit" class="btn-submit">Confirmar Movimiento</button>
+        </form>
+        <div id="mensaje"></div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation Bar estilo Mobile App -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" onclick="switchView('dashboard', this)">
+        <span class="nav-icon">📊</span>
+        <span>Tablero</span>
+      </button>
+      <button class="nav-item fab" onclick="switchView('upload', this)">
+        <span class="plus-icon">+</span>
+      </button>
+      <button class="nav-item" onclick="cargarDatos()">
+        <span class="nav-icon">🔄</span>
+        <span>Actualizar</span>
+      </button>
+    </nav>
   </div>
+
   <script src="app.js"></script>
 </body>
 </html>
