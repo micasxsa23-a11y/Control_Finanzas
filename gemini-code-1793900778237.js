@@ -1,4 +1,4 @@
-const API_URL = "TU_URL_DE_APPS_SCRIPT";
+const API_URL = "Thttps://script.google.com/macros/s/AKfycbxsIeeCCXUivsVibD8mtWIdt0AqUmsVgkhFt7XtHlPmcsO1p5yX7QTjkQNnkOoADcpc/exec";
 let globalData = {};
 
 window.onload = function() {
