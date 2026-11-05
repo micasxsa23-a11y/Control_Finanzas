@@ -1,0 +1,33 @@
+:root {
+  --bg: #0b0f19;
+  --card: #131b2e;
+  --border: #1e293b;
+  --accent: #22c55e;
+  --text: #f8fafc;
+  --dim: #94a3b8;
+  --blue: #38bdf8;
+}
+body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
+.app-container { width: 100%; max-width: 480px; }
+header { text-align: center; margin-bottom: 24px; }
+h1 { font-size: 1.5rem; color: var(--blue); margin: 0; }
+p { color: var(--dim); font-size: 0.85rem; margin-top: 4px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); margin-bottom: 20px; }
+h2 { font-size: 1rem; color: var(--blue); margin-top: 0; margin-bottom: 14px; }
+.input-group { margin-bottom: 12px; }
+label { display: block; font-size: 0.75rem; color: var(--dim); text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
+input { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; box-sizing: border-box; font-size: 0.95rem; }
+.file-upload { display: block; background: var(--border); border: 2px dashed var(--dim); padding: 12px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 0.85rem; margin-bottom: 16px; color: var(--dim); }
+.file-upload input { display: none; }
+.btn-primary { width: 100%; background: var(--accent); color: white; border: none; padding: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 1rem; margin-top: 8px; }
+.btn-primary:hover { background: #16a34a; }
+.tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 14px; padding-bottom: 4px; }
+.tab-btn { background: var(--border); border: none; color: var(--dim); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; white-space: nowrap; }
+.tab-btn.active { background: var(--blue); color: var(--bg); font-weight: bold; }
+.cards-list { display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto; }
+.item-card { background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+.item-info { display: flex; flex-direction: column; gap: 2px; }
+.item-title { font-weight: 600; font-size: 0.9rem; }
+.item-sub { font-size: 0.75rem; color: var(--dim); }
+.item-price { font-weight: bold; color: var(--accent); font-size: 0.95rem; }
+#mensaje { margin-top: 10px; text-align: center; font-size: 0.85rem; color: var(--accent); }

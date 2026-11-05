@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Financiero ms.pixelworks</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>Control Financiero</h1>
+      <p>Panel Minimalista</p>
+    </header>
+
+    <!-- Carga con Factura -->
+    <section class="card">
+      <h2>⚡ Carga Rápida / Factura</h2>
+      <label class="file-upload">
+        <span>📄 Subir Factura (PDF/Foto)</span>
+        <input type="file" id="archivoFactura" onchange="analizarFactura(this)">
+      </label>
+      
+      <form id="gastoForm" onsubmit="guardarMovimiento(event)">
+        <div class="input-group">
+          <label>Monto ($)</label>
+          <input type="number" id="monto" step="any" required placeholder="0.00">
+        </div>
+        <div class="input-group">
+          <label>Categoría / Concepto</label>
+          <input type="text" id="categoria" required placeholder="Ej: EDES, Alquiler">
+        </div>
+        <div class="input-group">
+          <label>Notas / Vencimiento</label>
+          <input type="text" id="descripcion" placeholder="Detalle adicional">
+        </div>
+        <button type="submit" class="btn-primary">Guardar Gasto</button>
+      </form>
+      <div id="mensaje"></div>
+    </section>
+
+    <!-- Visualización por Pestañas y Tarjetas -->
+    <section class="card">
+      <h2>📊 Resumen de la Planilla</h2>
+      <div id="tabsContainer" class="tabs"></div>
+      <div id="cardsContainer" class="cards-list">Cargando datos...</div>
+    </section>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
