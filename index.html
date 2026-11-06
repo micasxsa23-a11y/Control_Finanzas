@@ -3,14 +3,316 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Financiero Estricto • Command Center</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Librería PDF.js para extraer importes y vencimientos de facturas en el acto -->
+  <title>Control Financiero • Command Center</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #070a0f;
+      --bg-panel: #101622;
+      --bg-card: #161f30;
+      --border: #222f46;
+      --neon: #00e676;
+      --neon-soft: rgba(0, 230, 118, 0.12);
+      --cyan: #38bdf8;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .dashboard-wrapper {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .topbar {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-dot {
+      width: 12px;
+      height: 36px;
+      background: var(--neon);
+      border-radius: 6px;
+      box-shadow: 0 0 15px var(--neon);
+    }
+    .eyebrow { font-size: 0.72rem; letter-spacing: 1.2px; color: var(--neon); font-weight: 700; display: block; }
+    .topbar h1 { font-size: 1.35rem; font-weight: 700; margin-top: 2px; }
+
+    .topbar-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+    .search-box {
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      min-width: 260px;
+      font-size: 0.88rem;
+    }
+
+    .status-badge {
+      background: var(--neon-soft);
+      color: var(--neon);
+      border: 1px solid rgba(0, 230, 118, 0.35);
+      padding: 9px 14px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .btn-sync {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    .btn-sync:hover { border-color: var(--neon); color: var(--neon); }
+
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 14px;
+    }
+
+    .kpi-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .kpi-card.highlight {
+      background: linear-gradient(145deg, #132421 0%, #101622 100%);
+      border-color: rgba(0, 230, 118, 0.45);
+    }
+
+    .kpi-label { font-size: 0.73rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-val { font-size: 1.35rem; font-weight: 800; }
+    .kpi-val.neon, .kpi-val-sm.neon { color: var(--neon); }
+    .kpi-val.warning { color: var(--cyan); }
+    .kpi-row { display: flex; justify-content: space-between; align-items: center; }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-bar-fill { height: 100%; background: var(--neon); border-radius: 99px; }
+
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1fr 410px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .data-column { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+    .tabs-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .tab-pill {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 9px 16px;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tab-pill.active {
+      background: var(--neon);
+      color: #06090e;
+      border-color: var(--neon);
+      font-weight: 700;
+    }
+
+    .sheet-block {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .sheet-block-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sheet-block-header h3 { font-size: 1.05rem; color: var(--neon); }
+
+    .table-scroll { width: 100%; overflow-x: auto; }
+    .fin-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; text-align: left; }
+    .fin-table th {
+      background: var(--bg-card);
+      color: var(--muted);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .fin-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      white-space: nowrap;
+    }
+    .fin-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .code-tag {
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--cyan);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+    .state-tag {
+      background: var(--neon-soft);
+      color: var(--neon);
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
+
+    .mini-progress { display: flex; align-items: center; gap: 8px; }
+    .mini-track { width: 70px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; }
+    .mini-fill { height: 100%; background: var(--neon); }
+
+    .scanner-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      position: sticky;
+      top: 20px;
+    }
+    .scanner-header h2 { font-size: 1.1rem; color: var(--neon); margin-bottom: 6px; }
+    .scanner-header p { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; line-height: 1.4; }
+
+    .pdf-dropzone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 230, 118, 0.04);
+      border: 1.5px dashed rgba(0, 230, 118, 0.45);
+      border-radius: 14px;
+      padding: 20px 14px;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+    .pdf-dropzone input { display: none; }
+    .pdf-icon { font-size: 1.8rem; }
+    .pdf-hint { font-size: 0.75rem; color: var(--muted); }
+
+    .chips-box {
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chips-box.hidden { display: none; }
+    .chip-title { font-size: 0.72rem; color: var(--muted); display: block; margin-bottom: 6px; }
+    .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--neon);
+      color: var(--neon);
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .chip-btn:hover { background: var(--neon); color: #000; }
+
+    .form-group { margin-bottom: 14px; flex: 1; }
+    .form-row { display: flex; gap: 12px; }
+    .form-group label { display: block; font-size: 0.74rem; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 11px 12px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--neon);
+      color: #05080d;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+
+    .status-msg { margin-top: 12px; text-align: center; font-size: 0.84rem; color: var(--neon); font-weight: 600; }
+    .loading-box { padding: 40px; text-align: center; color: var(--muted); }
+
+    @media (max-width: 1200px) {
+      .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+      .workspace-grid { grid-template-columns: 1fr; }
+      .scanner-panel { position: static; }
+    }
+    @media (max-width: 680px) {
+      body { padding: 10px; }
+      .kpi-strip { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .kpi-val { font-size: 1.1rem; }
+      .form-row { flex-direction: column; gap: 0; }
+      .search-box { width: 100%; min-width: 0; }
+    }
+  </style>
 </head>
 <body>
   <div class="dashboard-wrapper">
-    <!-- Barra Superior Global -->
     <header class="topbar">
       <div class="brand">
         <span class="brand-dot"></span>
@@ -19,87 +321,56 @@
           <h1 id="sheetTitle">Presupuesto Base Cero y Registro de Boletas</h1>
         </div>
       </div>
-
       <div class="topbar-actions">
-        <input type="search" id="searchInput" class="search-box" placeholder="Filtrar categoría, código o boleta..." oninput="filtrarTablas(this.value)">
+        <input type="search" class="search-box" placeholder="Filtrar categoría, código o boleta..." oninput="filtrarTablas(this.value)">
         <div class="status-badge" id="kpiEstado">✔ Base Cero</div>
         <button class="btn-sync" onclick="cargarDatos()">🔄 Sincronizar</button>
       </div>
     </header>
 
-    <!-- Grilla de los 6 KPIs Principales (Toda la fila superior del Excel) -->
     <section class="kpi-strip">
+      <div class="kpi-card"><span class="kpi-label">Ingreso Neto Mensual</span><strong class="kpi-val" id="kpiIngreso">$0,00</strong></div>
+      <div class="kpi-card"><span class="kpi-label">Total Presupuestado</span><strong class="kpi-val" id="kpiPresupuestado">$0,00</strong></div>
+      <div class="kpi-card"><span class="kpi-label">Saldo Sin Asignar</span><strong class="kpi-val" id="kpiSinAsignar">$0,00</strong></div>
+      <div class="kpi-card"><span class="kpi-label">Total Gasto Real</span><strong class="kpi-val warning" id="kpiGastoReal">$0,00</strong></div>
+      <div class="kpi-card highlight"><span class="kpi-label">Saldo Real Disponible</span><strong class="kpi-val neon" id="kpiDisponible">$0,00</strong></div>
       <div class="kpi-card">
-        <span class="kpi-label">Ingreso Neto Mensual</span>
-        <strong class="kpi-val" id="kpiIngreso">$0,00</strong>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">Total Presupuestado</span>
-        <strong class="kpi-val" id="kpiPresupuestado">$0,00</strong>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">Saldo Sin Asignar</span>
-        <strong class="kpi-val" id="kpiSinAsignar">$0,00</strong>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">Total Gasto Real</span>
-        <strong class="kpi-val warning" id="kpiGastoReal">$0,00</strong>
-      </div>
-      <div class="kpi-card highlight">
-        <span class="kpi-label">Saldo Real Disponible</span>
-        <strong class="kpi-val neon" id="kpiDisponible">$0,00</strong>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-row">
-          <span class="kpi-label">% Ejecutado</span>
-          <strong class="kpi-val-sm neon" id="kpiPorcentaje">0%</strong>
-        </div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="kpiBarra" style="width: 0%"></div>
-        </div>
+        <div class="kpi-row"><span class="kpi-label">% Ejecutado</span><strong class="kpi-val-sm neon" id="kpiPorcentaje">0%</strong></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="kpiBarra" style="width: 0%"></div></div>
       </div>
     </section>
 
-    <!-- Cuerpo Principal: En PC son 2 columnas (Datos a la izquierda, Escáner de Boletas fijo a la derecha) -->
     <div class="workspace-grid">
-      
-      <!-- COLUMNA IZQUIERDA: Todas las Tablas y Solapas del Excel -->
       <main class="data-column">
-        <div class="panel-header">
-          <div class="tabs-bar" id="tabsBar">
-            <button class="tab-pill active" onclick="cambiarVistaHoja('TODAS', this)">Ver Todo en Pantalla</button>
-          </div>
+        <div class="tabs-bar" id="tabsBar">
+          <button class="tab-pill active" onclick="cambiarVistaHoja('TODAS', this)">Ver Todo en Pantalla</button>
         </div>
-
-        <!-- Contenedor donde se dibujan todas las tablas completas y tarjetas -->
-        <div id="tablesWorkspace" class="tables-workspace">
-          <div class="loading-box">Leyendo todas las solapas de Google Sheets...</div>
+        <div id="tablesWorkspace">
+          <div class="loading-box">Conectando con Google Sheets...</div>
         </div>
       </main>
 
-      <!-- COLUMNA DERECHA: Escáner de Facturas PDF y Carga Rápida -->
-      <aside class="Action-column" id="panelCarga">
+      <aside>
         <div class="scanner-panel">
           <div class="scanner-header">
             <h2>⚡ Escáner de Boletas y Carga</h2>
-            <p>Subí el PDF de EDES, gas, expensas o alquiler. El lector detecta montos y vencimientos solo.</p>
+            <p>Subí el PDF de la factura para extraer importe y vencimiento en el acto.</p>
           </div>
 
-          <label class="pdf-dropzone" id="dropzone">
+          <label class="pdf-dropzone">
             <span class="pdf-icon">📄</span>
             <strong id="pdfFileName">Soltar o elegir PDF / Imagen de factura</strong>
-            <span class="pdf-hint">Extrae total a pagar y fecha de vencimiento</span>
+            <span class="pdf-hint">Autocompleta monto total y fecha de vencimiento</span>
             <input type="file" id="archivoFactura" accept=".pdf,image/*" onchange="procesarArchivoLocal(this)">
           </label>
 
-          <!-- Chips interactivos cuando el PDF tiene varios montos o 1er/2do vencimiento -->
           <div id="chipsContainer" class="chips-box hidden">
-            <div class="chip-group">
+            <div>
               <span class="chip-title">Importes detectados en el PDF (tocá para usar):</span>
               <div id="montoChips" class="chip-list"></div>
             </div>
-            <div class="chip-group">
-              <span class="chip-title">Fechas / Vencimientos detectados:</span>
+            <div>
+              <span class="chip-title">Vencimientos / Fechas detectadas:</span>
               <div id="fechaChips" class="chip-list"></div>
             </div>
           </div>
@@ -111,22 +382,18 @@
                 <input type="number" id="monto" step="0.01" required placeholder="0.00">
               </div>
               <div class="form-group">
-                <label>Vencimiento / Fecha</label>
+                <label>Vencimiento / Detalle</label>
                 <input type="text" id="descripcion" placeholder="Ej: Vto 18/11/2026">
               </div>
             </div>
-
             <div class="form-group">
               <label>Concepto / Boleta</label>
-              <input type="text" id="categoria" required placeholder="Ej: EDES Castelar 2259 / Alquiler Colón">
+              <input type="text" id="categoria" required placeholder="Ej: EDES / Alquiler">
             </div>
-
             <div class="form-row">
               <div class="form-group">
-                <label>Imputar a Categoría (Opcional)</label>
-                <select id="codigoCategoria">
-                  <option value="">-- Solo registrar boleta --</option>
-                </select>
+                <label>Imputar a Categoría</label>
+                <select id="codigoCategoria"><option value="">-- Solo registrar boleta --</option></select>
               </div>
               <div class="form-group">
                 <label>Estado</label>
@@ -136,17 +403,273 @@
                 </select>
               </div>
             </div>
-
             <button type="submit" class="btn-submit" id="btnGuardar">Guardar e Impactar en Planilla</button>
           </form>
-
           <div id="mensajeEstado" class="status-msg"></div>
         </div>
       </aside>
-
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+    // PEGÁ ACÁ TU URL DE APPS SCRIPT TERMINADA EN /exec
+    const API_URL = "https://script.google.com/macros/s/AKfycby_VpFZnjFJImlR-m4rPM6DP_eTQ9ZamOYPW-MsVyj9s3wB7EDk0tqmjXVyYmq-aaJV/exec";
+
+    let libroCompleto = {};
+    let vistaActual = "TODAS";
+    let archivoAdjuntoBase64 = null;
+
+    if (window['pdfjsLib']) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    window.onload = () => cargarDatos();
+
+    function cargarDatos() {
+      const workspace = document.getElementById('tablesWorkspace');
+      workspace.innerHTML = '<div class="loading-box">Sincronizando todas las solapas con Google Sheets...</div>';
+
+      fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+          libroCompleto = data.hojas || data;
+          if (data.nombreArchivo) document.getElementById('sheetTitle').innerText = data.nombreArchivo;
+          extraerKPIsSuperiores();
+          armarBotonesSolapas();
+          dibujarTablas();
+        })
+        .catch(() => {
+          workspace.innerHTML = '<div class="loading-box">Revisá haber pegado tu URL de Apps Script en la constante API_URL y haber actualizado la implementación a Nueva Versión.</div>';
+        });
+    }
+
+    function extraerKPIsSuperiores() {
+      const hojaPbc = libroCompleto["Presupuesto Base Cero"];
+      if (!hojaPbc) return;
+
+      const selectCat = document.getElementById('codigoCategoria');
+      selectCat.innerHTML = '<option value="">-- Solo registrar boleta --</option>';
+
+      hojaPbc.forEach((fila, idx) => {
+        if (fila.join(" ").includes("Período:")) {
+          document.getElementById('periodoText').innerText = fila.filter(Boolean).join(" • ");
+        }
+        if (fila[1] && String(fila[1]).toUpperCase().includes("INGRESO NETO") && hojaPbc[idx + 1]) {
+          const vals = hojaPbc[idx + 1];
+          document.getElementById('kpiIngreso').innerText = vals[1] || "$0,00";
+          document.getElementById('kpiPresupuestado').innerText = vals[2] || "$0,00";
+          document.getElementById('kpiSinAsignar').innerText = vals[3] || "$0,00";
+          document.getElementById('kpiGastoReal').innerText = vals[4] || "$0,00";
+          document.getElementById('kpiDisponible').innerText = vals[5] || "$0,00";
+          document.getElementById('kpiPorcentaje').innerText = vals[6] || "0%";
+          document.getElementById('kpiEstado').innerText = vals[7] || "✔ Base Cero";
+
+          const numPct = parseFloat(String(vals[6]).replace(',', '.').replace('%', '')) || 0;
+          document.getElementById('kpiBarra').style.width = Math.min(numPct, 100) + "%";
+        }
+        const col0 = String(fila[0] || "").trim();
+        if (col0.startsWith("CAT-")) {
+          const opt = document.createElement('option');
+          opt.value = col0;
+          opt.innerText = `${col0} - ${fila[1]} (Disp: ${fila[4]})`;
+          selectCat.appendChild(opt);
+        }
+      });
+    }
+
+    function armarBotonesSolapas() {
+      const bar = document.getElementById('tabsBar');
+      bar.innerHTML = `<button class="tab-pill ${vistaActual === 'TODAS' ? 'active' : ''}" onclick="cambiarVistaHoja('TODAS', this)">Ver Todas las Solapas</button>`;
+      Object.keys(libroCompleto).forEach(nombreHoja => {
+        const btn = document.createElement('button');
+        btn.className = 'tab-pill' + (vistaActual === nombreHoja ? ' active' : '');
+        btn.innerText = nombreHoja;
+        btn.onclick = () => cambiarVistaHoja(nombreHoja, btn);
+        bar.appendChild(btn);
+      });
+    }
+
+    function cambiarVistaHoja(nombre, btn) {
+      vistaActual = nombre;
+      document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      dibujarTablas();
+    }
+
+    function dibujarTablas() {
+      const workspace = document.getElementById('tablesWorkspace');
+      workspace.innerHTML = '';
+      const hojas = vistaActual === 'TODAS' ? Object.keys(libroCompleto) : [vistaActual];
+
+      hojas.forEach(nombreHoja => {
+        const filas = libroCompleto[nombreHoja] || [];
+        if (filas.length === 0) return;
+
+        const bloque = document.createElement('section');
+        bloque.className = 'sheet-block';
+        let html = `<div class="sheet-block-header"><h3>📂 ${nombreHoja}</h3></div><div class="table-scroll"><table class="fin-table">`;
+
+        let headerIdx = nombreHoja === "Presupuesto Base Cero"
+          ? filas.findIndex(r => String(r[0]).includes("N°") || String(r[1]).includes("Categoría"))
+          : filas.findIndex(r => r.some(c => c && String(c).trim() !== ""));
+
+        if (headerIdx === -1) headerIdx = 0;
+        const headers = filas[headerIdx] || [];
+        html += `<thead><tr>${headers.map(h => `<th>${h || ''}</th>`).join('')}</tr></thead><tbody>`;
+
+        for (let i = headerIdx + 1; i < filas.length; i++) {
+          const r = filas[i];
+          if (r.every(c => !c || String(c).trim() === "")) continue;
+          html += `<tr class="searchable-row">`;
+          r.forEach((celda, colIdx) => {
+            const val = String(celda || "").trim();
+            if (colIdx === 0 && val.startsWith("CAT-")) {
+              html += `<td><span class="code-tag">${val}</span></td>`;
+            } else if (colIdx === 6 && val.includes("%")) {
+              const pct = Math.min(parseFloat(val.replace(',', '.').replace('%', '')) || 0, 100);
+              html += `<td><div class="mini-progress"><div class="mini-track"><div class="mini-fill" style="width:${pct}%"></div></div><span>${val}</span></div></td>`;
+            } else if (colIdx === 7 && val) {
+              html += `<td><span class="state-tag">${val}</span></td>`;
+            } else if (val.startsWith("http")) {
+              html += `<td><a href="${val}" target="_blank" style="color:var(--neon);font-weight:700;">Ver PDF ↗</a></td>`;
+            } else {
+              html += `<td>${val}</td>`;
+            }
+          });
+          html += `</tr>`;
+        }
+        html += `</tbody></table></div>`;
+        bloque.innerHTML = html;
+        workspace.appendChild(bloque);
+      });
+    }
+
+    function filtrarTablas(q) {
+      const texto = q.toLowerCase().trim();
+      document.querySelectorAll('.searchable-row').forEach(tr => {
+        tr.style.display = tr.innerText.toLowerCase().includes(texto) ? '' : 'none';
+      });
+    }
+
+    async function procesarArchivoLocal(input) {
+      if (!input.files || input.files.length === 0) return;
+      const file = input.files[0];
+      document.getElementById('pdfFileName').innerText = file.name;
+      document.getElementById('categoria').value = file.name.replace(/\.[^/.]+$/, "");
+      const msg = document.getElementById('mensajeEstado');
+      msg.innerText = "Escaneando PDF en busca de importes y vencimientos...";
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        archivoAdjuntoBase64 = { bytes: e.target.result.split(',')[1], mimeType: file.type, filename: file.name };
+      };
+      reader.readAsDataURL(file);
+
+      if (file.type === "application/pdf" && window['pdfjsLib']) {
+        try {
+          const buffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+          let fullText = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            fullText += content.items.map(item => item.str).join(" ") + "\n";
+          }
+          extraerMontosYFechas(fullText);
+        } catch (e) {
+          msg.innerText = "Archivo listo. Ingresá el monto manualmente.";
+        }
+      }
+    }
+
+    function extraerMontosYFechas(texto) {
+      const montoChips = document.getElementById('montoChips');
+      const fechaChips = document.getElementById('fechaChips');
+      montoChips.innerHTML = '';
+      fechaChips.innerHTML = '';
+
+      const regexMontos = /(?:\$|TOTAL|PAGAR|IMPORTE)\s*[:\.]?\s*\$?\s*(\d{1,3}(?:\.\d{3})+,\d{2}|\d+,\d{2}|\d{4,10}\.\d{2})/gi;
+      const montos = new Set();
+      let m;
+      while ((m = regexMontos.exec(texto)) !== null) {
+        let limpio = m[1].trim();
+        if (limpio.includes(',') && limpio.includes('.')) limpio = limpio.replace(/\./g, '').replace(',', '.');
+        else if (limpio.includes(',')) limpio = limpio.replace(',', '.');
+        const n = parseFloat(limpio);
+        if (!isNaN(n) && n > 100) montos.add(n.toFixed(2));
+      }
+
+      const regexFechas = /\b(\d{2}[\/\-]\d{2}[\/\-](?:202\d|\d{2}))\b/g;
+      const fechas = new Set();
+      while ((m = regexFechas.exec(texto)) !== null) fechas.add(m[1]);
+
+      const arrMontos = Array.from(montos);
+      const arrFechas = Array.from(fechas);
+
+      if (arrMontos.length > 0) {
+        document.getElementById('monto').value = arrMontos[0];
+        arrMontos.forEach(val => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'chip-btn';
+          btn.innerText = '$' + Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+          btn.onclick = () => document.getElementById('monto').value = val;
+          montoChips.appendChild(btn);
+        });
+      }
+
+      if (arrFechas.length > 0) {
+        document.getElementById('descripcion').value = "Vto: " + arrFechas[0];
+        arrFechas.forEach(f => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'chip-btn';
+          btn.innerText = '📅 ' + f;
+          btn.onclick = () => document.getElementById('descripcion').value = "Vto: " + f;
+          fechaChips.appendChild(btn);
+        });
+      }
+
+      document.getElementById('chipsContainer').classList.toggle('hidden', arrMontos.length === 0 && arrFechas.length === 0);
+      document.getElementById('mensajeEstado').innerText = (arrMontos.length || arrFechas.length)
+        ? "¡Factura leída! Tocá otro chip si preferís el 2° vencimiento."
+        : "PDF adjuntado. Completá los campos manualmente.";
+    }
+
+    function guardarMovimiento(e) {
+      e.preventDefault();
+      const msg = document.getElementById('mensajeEstado');
+      const btn = document.getElementById('btnGuardar');
+      btn.disabled = true;
+      msg.innerText = "Guardando en Google Sheets...";
+
+      fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          accion: "registrar",
+          monto: document.getElementById('monto').value,
+          categoria: document.getElementById('categoria').value,
+          descripcion: document.getElementById('descripcion').value,
+          codigoCategoria: document.getElementById('codigoCategoria').value,
+          estado: document.getElementById('estadoPago').value,
+          fecha: new Date().toLocaleDateString('es-AR'),
+          archivo: archivoAdjuntoBase64
+        })
+      })
+      .then(res => res.json())
+      .then(res => {
+        btn.disabled = false;
+        msg.innerText = res.mensaje || "✔ ¡Guardado!";
+        document.getElementById('gastoForm').reset();
+        document.getElementById('chipsContainer').classList.add('hidden');
+        archivoAdjuntoBase64 = null;
+        cargarDatos();
+      })
+      .catch(() => {
+        btn.disabled = false;
+        msg.innerText = "Error de conexión al guardar.";
+      });
+    }
+  </script>
 </body>
 </html>
