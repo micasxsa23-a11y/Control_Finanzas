@@ -3,110 +3,148 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Finanzas • Base Cero</title>
+  <title>Control Financiero Estricto • Command Center</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Librería PDF.js para extraer importes y vencimientos de facturas en el acto -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
-  <div class="mobile-shell">
-    <!-- Top Bar -->
-    <header class="top-bar">
-      <div>
-        <span class="greeting">PRESUPUESTO BASE CERO</span>
-        <h1 id="periodoTitle">Noviembre 2026</h1>
+  <div class="dashboard-wrapper">
+    <!-- Barra Superior Global -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <div>
+          <span class="eyebrow" id="periodoText">SISTEMA DE CONTROL FINANCIERO</span>
+          <h1 id="sheetTitle">Presupuesto Base Cero y Registro de Boletas</h1>
+        </div>
       </div>
-      <div class="status-pill" id="estadoBaseCero">✔ Base Cero</div>
+
+      <div class="topbar-actions">
+        <input type="search" id="searchInput" class="search-box" placeholder="Filtrar categoría, código o boleta..." oninput="filtrarTablas(this.value)">
+        <div class="status-badge" id="kpiEstado">✔ Base Cero</div>
+        <button class="btn-sync" onclick="cargarDatos()">🔄 Sincronizar</button>
+      </div>
     </header>
 
-    <!-- Vista 1: Dashboard Principal -->
-    <main id="view-dashboard" class="view active">
-      <!-- Hero Balance Card -->
-      <section class="hero-card">
-        <span class="hero-label">Saldo Real Disponible</span>
-        <div class="hero-amount" id="kpiDisponible">$0,00</div>
-        
-        <div class="progress-wrapper">
-          <div class="progress-labels">
-            <span>Ejecutado del mes</span>
-            <strong id="kpiPorcentaje">0%</strong>
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" id="kpiBarra" style="width: 0%;"></div>
+    <!-- Grilla de los 6 KPIs Principales (Toda la fila superior del Excel) -->
+    <section class="kpi-strip">
+      <div class="kpi-card">
+        <span class="kpi-label">Ingreso Neto Mensual</span>
+        <strong class="kpi-val" id="kpiIngreso">$0,00</strong>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Total Presupuestado</span>
+        <strong class="kpi-val" id="kpiPresupuestado">$0,00</strong>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Saldo Sin Asignar</span>
+        <strong class="kpi-val" id="kpiSinAsignar">$0,00</strong>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Total Gasto Real</span>
+        <strong class="kpi-val warning" id="kpiGastoReal">$0,00</strong>
+      </div>
+      <div class="kpi-card highlight">
+        <span class="kpi-label">Saldo Real Disponible</span>
+        <strong class="kpi-val neon" id="kpiDisponible">$0,00</strong>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-row">
+          <span class="kpi-label">% Ejecutado</span>
+          <strong class="kpi-val-sm neon" id="kpiPorcentaje">0%</strong>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="kpiBarra" style="width: 0%"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cuerpo Principal: En PC son 2 columnas (Datos a la izquierda, Escáner de Boletas fijo a la derecha) -->
+    <div class="workspace-grid">
+      
+      <!-- COLUMNA IZQUIERDA: Todas las Tablas y Solapas del Excel -->
+      <main class="data-column">
+        <div class="panel-header">
+          <div class="tabs-bar" id="tabsBar">
+            <button class="tab-pill active" onclick="cambiarVistaHoja('TODAS', this)">Ver Todo en Pantalla</button>
           </div>
         </div>
 
-        <div class="hero-stats">
-          <div class="stat-box">
-            <span class="stat-label">Ingreso Neto</span>
-            <span class="stat-val up" id="kpiIngreso">$0</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-box">
-            <span class="stat-label">Gasto Real</span>
-            <span class="stat-val down" id="kpiGasto">$0</span>
-          </div>
+        <!-- Contenedor donde se dibujan todas las tablas completas y tarjetas -->
+        <div id="tablesWorkspace" class="tables-workspace">
+          <div class="loading-box">Leyendo todas las solapas de Google Sheets...</div>
         </div>
-      </section>
+      </main>
 
-      <!-- Selector de Solapas -->
-      <div class="section-header">
-        <h2>Categorías y Movimientos</h2>
-        <div id="tabsContainer" class="pills-nav"></div>
-      </div>
-
-      <!-- Lista de Tarjetas Limpias -->
-      <div id="cardsContainer" class="cards-feed">
-        <div class="skeleton">Sincronizando con Google Sheets...</div>
-      </div>
-    </main>
-
-    <!-- Vista 2: Subir Factura / Nuevo Gasto -->
-    <main id="view-upload" class="view">
-      <section class="form-card">
-        <h2>⚡ Cargar Boleta o Gasto</h2>
-        <p class="form-sub">Subí el PDF de la factura para autocompletar o ingresá el movimiento a mano.</p>
-
-        <label class="dropzone" id="dropzoneLabel">
-          <span class="drop-icon">📄</span>
-          <span id="fileNameText">Tocar para subir factura (PDF / Imagen)</span>
-          <input type="file" id="archivoFactura" onchange="analizarFactura(this)">
-        </label>
-
-        <form id="gastoForm" onsubmit="guardarMovimiento(event)">
-          <div class="field">
-            <label>Monto ($ ARS)</label>
-            <input type="number" id="monto" step="any" required placeholder="0.00">
+      <!-- COLUMNA DERECHA: Escáner de Facturas PDF y Carga Rápida -->
+      <aside class="Action-column" id="panelCarga">
+        <div class="scanner-panel">
+          <div class="scanner-header">
+            <h2>⚡ Escáner de Boletas y Carga</h2>
+            <p>Subí el PDF de EDES, gas, expensas o alquiler. El lector detecta montos y vencimientos solo.</p>
           </div>
 
-          <div class="field">
-            <label>Categoría / Concepto</label>
-            <input type="text" id="categoria" required placeholder="Ej: EDES, Alquiler Calle Colón">
+          <label class="pdf-dropzone" id="dropzone">
+            <span class="pdf-icon">📄</span>
+            <strong id="pdfFileName">Soltar o elegir PDF / Imagen de factura</strong>
+            <span class="pdf-hint">Extrae total a pagar y fecha de vencimiento</span>
+            <input type="file" id="archivoFactura" accept=".pdf,image/*" onchange="procesarArchivoLocal(this)">
+          </label>
+
+          <!-- Chips interactivos cuando el PDF tiene varios montos o 1er/2do vencimiento -->
+          <div id="chipsContainer" class="chips-box hidden">
+            <div class="chip-group">
+              <span class="chip-title">Importes detectados en el PDF (tocá para usar):</span>
+              <div id="montoChips" class="chip-list"></div>
+            </div>
+            <div class="chip-group">
+              <span class="chip-title">Fechas / Vencimientos detectados:</span>
+              <div id="fechaChips" class="chip-list"></div>
+            </div>
           </div>
 
-          <div class="field">
-            <label>Vencimiento / Detalles</label>
-            <input type="text" id="descripcion" placeholder="Ej: Vto: 15/11/2026">
-          </div>
+          <form id="gastoForm" onsubmit="guardarMovimiento(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Monto ($ ARS)</label>
+                <input type="number" id="monto" step="0.01" required placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Vencimiento / Fecha</label>
+                <input type="text" id="descripcion" placeholder="Ej: Vto 18/11/2026">
+              </div>
+            </div>
 
-          <button type="submit" class="btn-submit">Confirmar Movimiento</button>
-        </form>
-        <div id="mensaje"></div>
-      </section>
-    </main>
+            <div class="form-group">
+              <label>Concepto / Boleta</label>
+              <input type="text" id="categoria" required placeholder="Ej: EDES Castelar 2259 / Alquiler Colón">
+            </div>
 
-    <!-- Bottom Navigation Bar estilo Mobile App -->
-    <nav class="bottom-nav">
-      <button class="nav-item active" onclick="switchView('dashboard', this)">
-        <span class="nav-icon">📊</span>
-        <span>Tablero</span>
-      </button>
-      <button class="nav-item fab" onclick="switchView('upload', this)">
-        <span class="plus-icon">+</span>
-      </button>
-      <button class="nav-item" onclick="cargarDatos()">
-        <span class="nav-icon">🔄</span>
-        <span>Actualizar</span>
-      </button>
-    </nav>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Imputar a Categoría (Opcional)</label>
+                <select id="codigoCategoria">
+                  <option value="">-- Solo registrar boleta --</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Estado</label>
+                <select id="estadoPago">
+                  <option value="Completado">Completado / Pagado</option>
+                  <option value="Pendiente">Pendiente de Pago</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btnGuardar">Guardar e Impactar en Planilla</button>
+          </form>
+
+          <div id="mensajeEstado" class="status-msg"></div>
+        </div>
+      </aside>
+
+    </div>
   </div>
 
   <script src="app.js"></script>
